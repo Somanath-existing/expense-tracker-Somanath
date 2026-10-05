@@ -1,7 +1,4 @@
-const { sql, json, requireAuth, checkOrigin, validateTransaction, CATEGORIES } = require('../_lib');
-
-const COLS = `id, title, amount::float8 AS amount,
-  to_char(date, 'YYYY-MM-DD') AS date, category, type, note`;
+const { sql, json, requireAuth, checkOrigin, validateTransaction } = require('../_lib');
 
 // Fetch this user's allowed categories (system defaults + their custom ones)
 async function getUserCategories(db, uid) {
@@ -27,28 +24,44 @@ module.exports = async function handler(req, res) {
   if (req.method === 'GET') {
     const { search, category, type, from, to } = req.query;
 
-    // Build query using tagged-template fragments to stay fully parameterised.
-    // neon's tagged-template driver handles all escaping; we compose fragments safely.
-    // Support filtering by any category string (default or custom)
-    const categoryVal = (category && typeof category === 'string' && category.trim().length <= 100)
-      ? category.trim()
-      : null;
-    const typeVal     = type     && ['income', 'expense'].includes(type) ? type : null;
-    const fromVal     = from     && /^\d{4}-\d{2}-\d{2}$/.test(from) ? from : null;
-    const toVal       = to       && /^\d{4}-\d{2}-\d{2}$/.test(to)   ? to   : null;
+    // Build a safe parameterised query using positional $N placeholders.
+    // All user-supplied values are passed as params — never interpolated into SQL.
+    const conditions = ['user_id = $1'];
+    const params = [uid];
 
-    const rows = await db`
-      SELECT ${db.unsafe(COLS)}
+    const addParam = (sql, val) => {
+      params.push(val);
+      conditions.push(sql.replace('?', `$${params.length}`));
+    };
+
+    if (search && typeof search === 'string') {
+      addParam('title ILIKE ?', `%${search.trim().slice(0, 100)}%`);
+    }
+    if (category && typeof category === 'string' && category.trim().length <= 100) {
+      addParam('category = ?', category.trim());
+    }
+    if (type && ['income', 'expense'].includes(type)) {
+      addParam('type = ?', type);
+    }
+    if (from && /^\d{4}-\d{2}-\d{2}$/.test(from)) {
+      addParam("date >= ?::date", from);
+    }
+    if (to && /^\d{4}-\d{2}-\d{2}$/.test(to)) {
+      addParam("date <= ?::date", to);
+    }
+
+    const whereClause = conditions.join(' AND ');
+    const query = `
+      SELECT id, title, amount::float8 AS amount,
+             to_char(date, 'YYYY-MM-DD') AS date,
+             category, type, note
       FROM expenses
-      WHERE user_id = ${uid}
-        ${searchVal   ? db`AND title ILIKE ${searchVal}`       : db``}
-        ${categoryVal ? db`AND category = ${categoryVal}`      : db``}
-        ${typeVal     ? db`AND type = ${typeVal}`              : db``}
-        ${fromVal     ? db`AND date >= ${fromVal}::date`       : db``}
-        ${toVal       ? db`AND date <= ${toVal}::date`         : db``}
+      WHERE ${whereClause}
       ORDER BY date DESC, id DESC
       LIMIT 500
     `;
+
+    const rows = await db(query, params);
     return json(res, 200, rows);
   }
 
