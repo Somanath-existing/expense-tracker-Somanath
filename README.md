@@ -47,42 +47,7 @@ Then open http://localhost:3000
 
 ---
 
-## Deploy to Vercel (free)
 
-### 1. Get a free database
-- Sign up at [neon.tech](https://neon.tech)
-- Create a project → copy the **Neon Serverless** connection string (starts with `postgres://`)
-
-### 2. Deploy
-
-```bash
-npm install -g vercel
-vercel login
-vercel --prod
-```
-
-During setup, Vercel will ask you for environment variables. Add:
-
-| Variable | Value |
-|---|---|
-| `DATABASE_URL` | Your Neon connection string |
-| `JWT_SECRET` | A random 48-char secret (`node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`) |
-| `NODE_ENV` | `production` |
-
-Vercel will automatically run `node api/migrate.js` (the buildCommand) before each deploy, keeping the schema up to date.
-
-### 3. Set up CI/CD (GitHub Actions)
-
-1. Push the repo to GitHub
-2. In the Vercel dashboard: **Settings → Tokens** → create a token
-3. In GitHub: **Settings → Secrets → Actions**, add:
-   - `VERCEL_TOKEN` — the token you just created
-   - `VERCEL_ORG_ID` — from `.vercel/project.json` after first deploy
-   - `VERCEL_PROJECT_ID` — same file
-
-Every push to `main` now runs the CI checks and deploys to Vercel automatically. Pull requests run CI only (no deploy).
-
----
 
 ## Project structure
 
@@ -110,10 +75,3 @@ Every push to `main` now runs the CI checks and deploys to Vercel automatically.
 └── README.md
 ```
 
----
-
-## Why Vercel (not Render/Fly)?
-
-Vercel's free tier doesn't sleep between requests (unlike Render free), has zero cold-start penalty for serverless functions written in Node.js, includes automatic HTTPS and global CDN, and the Neon serverless Postgres driver is built for this environment. The combination is genuinely free indefinitely for personal projects.
-
-**Docker:** Docker isn't used here because Vercel's serverless model doesn't need it — each `api/*.js` file becomes its own function. If you want to self-host instead (VPS, Fly.io, Railway), add back the `Dockerfile` and `docker-compose.yml` from the earlier version.
