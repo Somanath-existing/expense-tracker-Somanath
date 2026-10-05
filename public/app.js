@@ -769,10 +769,8 @@ window.addEventListener('pageshow', async event => {
   // Only re-validate on bfcache restores — fresh loads go through init().
   if (!event.persisted) return;
 
-  // INSTANTLY hide the page so the user never sees a flash of stale content
-  // while we wait for the async network check.
-  document.documentElement.style.visibility = 'hidden';
-
+  // Page was already hidden at pagehide time (see listener below).
+  // Verify session before revealing.
   try {
     const res = await fetch('/api/auth/me', {
       credentials: 'same-origin',
@@ -780,14 +778,21 @@ window.addEventListener('pageshow', async event => {
       headers: { 'Cache-Control': 'no-store' }
     });
     if (res.ok) {
-      // Session still valid — reveal the page
       document.documentElement.style.visibility = '';
     } else {
-      // Session gone — replace() so Back can't return here
       window.location.replace('/login.html');
     }
   } catch {
-    // Network error — send to login to be safe
     window.location.replace('/login.html');
+  }
+});
+
+// Hide the page BEFORE it enters bfcache.
+// bfcache snapshots the page's rendering state at pagehide time.
+// By hiding here, the snapshot is already invisible — zero flash of
+// app content when the page is later restored via Back/Forward.
+window.addEventListener('pagehide', event => {
+  if (event.persisted) {
+    document.documentElement.style.visibility = 'hidden';
   }
 });

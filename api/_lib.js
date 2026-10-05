@@ -88,12 +88,15 @@ function requireAuth(req, res) {
 }
 
 function setAuthCookie(res, userId) {
-  const token = jwt.sign({ sub: String(userId) }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  const token = jwt.sign({ sub: String(userId) }, process.env.JWT_SECRET, { expiresIn: '1d' });
   // Always set Secure unless explicitly running on localhost (dev only)
   const isLocalDev = (process.env.NODE_ENV !== 'production') && !process.env.VERCEL;
   const secureFlag = isLocalDev ? '' : '; Secure';
+  // No Max-Age / Expires = SESSION cookie.
+  // The cookie lives only in the browser's memory and is deleted when the
+  // browser window/tab is fully closed. Reopening the browser = logged out.
   res.setHeader('Set-Cookie',
-    `token=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${7 * 86400}${secureFlag}`
+    `token=${token}; HttpOnly; SameSite=Strict; Path=/${secureFlag}`
   );
 }
 

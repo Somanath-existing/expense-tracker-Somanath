@@ -110,7 +110,15 @@
         redirectIfLoggedIn();
       }
     });
+
+    // Hide BEFORE entering bfcache so the snapshot is already invisible
+    window.addEventListener('pagehide', event => {
+      if (event.persisted) {
+        document.documentElement.style.visibility = 'hidden';
+      }
+    });
     // ──────────────────────────────────────────────────────────────────────────
+
 
     let mode = 'login';
     const $ = s => document.querySelector(s);
