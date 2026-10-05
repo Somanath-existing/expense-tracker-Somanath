@@ -1,0 +1,60 @@
+name: CI / CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  # ── Continuous Integration ──────────────────────────────────────────────────
+  ci:
+    name: Lint & Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check JS syntax (server-side)
+        run: |
+          for f in api/_lib.js api/migrate.js api/auth/*.js api/expenses/*.js; do
+            node --check "$f" && echo "✓ $f"
+          done
+
+      - name: Security audit
+        run: npm audit --omit=dev --audit-level=high
+
+  # ── Deploy to Vercel (main branch only) ────────────────────────────────────
+  deploy:
+    name: Deploy → Vercel
+    needs: ci
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel environment
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build project
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to production
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}

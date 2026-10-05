@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ExpenseFlow — Sign in</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💸</text></svg>" />
+  <style>
+    .auth-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; z-index: 1; padding: 1rem; }
+    .auth-card { width: 100%; max-width: 420px; padding: 2.25rem 2rem; animation: modalSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1); }
+    .auth-logo { display: flex; align-items: center; gap: 0.7rem; margin-bottom: 2rem; }
+    .auth-logo-icon { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg,var(--accent),#a855f7); display: flex; align-items: center; justify-content: center; color:#fff; box-shadow: 0 0 20px var(--accent-glow); }
+    .auth-logo h1 { font-family: var(--font-heading); font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; }
+    .auth-logo h1 span { color: var(--accent-light); }
+    .auth-heading { font-family: var(--font-heading); font-size: 1.55rem; font-weight: 800; margin-bottom: 0.35rem; }
+    .auth-sub { font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1.75rem; }
+    .auth-switch { margin-top: 1.25rem; font-size: 0.85rem; color: var(--text-secondary); text-align: center; }
+    .auth-switch a { color: var(--accent-light); text-decoration: none; font-weight: 600; }
+    .auth-switch a:hover { text-decoration: underline; }
+    .btn-full { width: 100%; justify-content: center; }
+  </style>
+</head>
+<body>
+  <main class="auth-wrap">
+    <div class="auth-card glass-card">
+      <div class="auth-logo">
+        <div class="auth-logo-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <h1>Expense<span>Flow</span></h1>
+      </div>
+
+      <h2 class="auth-heading" id="authHeading">Welcome back</h2>
+      <p class="auth-sub" id="authSub">Sign in to your account to continue.</p>
+
+      <form id="authForm" novalidate>
+        <div class="form-group">
+          <label for="emailInput">Email address</label>
+          <input id="emailInput" type="email" class="input" placeholder="you@example.com" autocomplete="email" required />
+          <span class="field-error" id="emailError"></span>
+        </div>
+        <div class="form-group">
+          <label for="passwordInput">Password</label>
+          <input id="passwordInput" type="password" class="input" placeholder="••••••••" autocomplete="current-password" minlength="8" required />
+          <span class="field-error" id="passwordError"></span>
+        </div>
+        <span class="field-error" id="globalError" role="alert" style="display:block;margin-bottom:.75rem;font-size:.85rem;"></span>
+        <button type="submit" class="btn btn-primary btn-glow btn-full" id="submitBtn">
+          <span id="submitLabel">Sign in</span>
+        </button>
+      </form>
+
+      <p class="auth-switch">
+        <span id="switchText">Don't have an account?</span>
+        <a href="#" id="switchLink">Create one</a>
+      </p>
+    </div>
+  </main>
+
+  <script>
+    let mode = 'login';
+    const $ = s => document.querySelector(s);
+
+    $('#switchLink').addEventListener('click', e => {
+      e.preventDefault();
+      mode = mode === 'login' ? 'register' : 'login';
+      const reg = mode === 'register';
+      $('#authHeading').textContent  = reg ? 'Create an account' : 'Welcome back';
+      $('#authSub').textContent      = reg ? 'Start tracking your money in seconds.' : 'Sign in to your account to continue.';
+      $('#submitLabel').textContent  = reg ? 'Create account' : 'Sign in';
+      $('#switchText').textContent   = reg ? 'Already have an account?' : "Don't have an account?";
+      $('#switchLink').textContent   = reg ? 'Sign in' : 'Create one';
+      $('#passwordInput').autocomplete = reg ? 'new-password' : 'current-password';
+      clearErrors();
+    });
+
+    function clearErrors() {
+      ['emailError','passwordError','globalError'].forEach(id => { $(('#' + id)).textContent = ''; });
+    }
+
+    $('#authForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      clearErrors();
+      const btn = $('#submitBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span style="opacity:.6">Please wait…</span>';
+
+      try {
+        const res = await fetch(`/api/auth/${mode}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: $('#emailInput').value.trim(), password: $('#passwordInput').value }),
+        });
+        const d = await res.json().catch(() => ({}));
+        if (res.ok) {
+          window.location.href = '/index.html';
+        } else {
+          if (d.errors) {
+            d.errors.forEach(msg => {
+              if (msg.toLowerCase().includes('email')) $('#emailError').textContent = msg;
+              else if (msg.toLowerCase().includes('password')) $('#passwordError').textContent = msg;
+              else $('#globalError').textContent = msg;
+            });
+          } else {
+            $('#globalError').textContent = d.error || 'Something went wrong. Please try again.';
+          }
+        }
+      } catch {
+        $('#globalError').textContent = 'Network error. Please check your connection.';
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span id="submitLabel">${mode === 'login' ? 'Sign in' : 'Create account'}</span>`;
+      }
+    });
+  </script>
+</body>
+</html>
