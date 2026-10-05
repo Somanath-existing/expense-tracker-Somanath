@@ -1,10 +1,10 @@
 const bcrypt = require('bcryptjs');
-const { sql, json, setAuthCookie, rateLimit } = require('../_lib');
+const { sql, json, setAuthCookie, rateLimit, getRealIp } = require('../_lib');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return json(res, 405, { error: 'Method not allowed' });
 
-  const ip = req.headers['x-forwarded-for'] || 'unknown';
+  const ip = getRealIp(req);
   if (rateLimit(`login:${ip}`, 15 * 60 * 1000, 20))
     return json(res, 429, { error: 'Too many attempts. Please wait 15 minutes.' });
 
