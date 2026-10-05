@@ -71,31 +71,47 @@
 
   <script>
     // ── Session guard ──────────────────────────────────────────────────────────
-    // If the user already has a valid session (e.g., pressed Back from the app),
-    // skip the login page entirely and send them straight to the app.
+    // Hide instantly to prevent any flash of the login form while we check.
+    document.documentElement.style.visibility = 'hidden';
+
     async function redirectIfLoggedIn() {
+      // If the user explicitly logged out (flag set by app.js), skip the
+      // auto-redirect so they see the login form instead of bouncing back to app.
+      if (sessionStorage.getItem('__loggedOut')) {
+        sessionStorage.removeItem('__loggedOut');
+        document.documentElement.style.visibility = '';
+        return;
+      }
       try {
         const res = await fetch('/api/auth/me', {
           credentials: 'same-origin',
+          cache: 'no-store',
           headers: { 'Cache-Control': 'no-store' }
         });
         if (res.ok) {
-          // Already authenticated — replace so Back doesn't loop back here
+          // Still logged in — send to app (replace so Back doesn't loop here)
           window.location.replace('/index.html');
+          return; // keep page hidden during redirect
         }
       } catch (_) {
-        // Network error — stay on login page, user can try signing in
+        // Network error — fall through and show login form
       }
+      // Not logged in — reveal the login form
+      document.documentElement.style.visibility = '';
     }
 
-    // Run on fresh load
+    // Run on fresh page load
     document.addEventListener('DOMContentLoaded', redirectIfLoggedIn);
 
-    // Run when page is restored from bfcache (browser Back/Forward)
+    // Run when browser restores page from bfcache (Back/Forward)
     window.addEventListener('pageshow', event => {
-      if (event.persisted) redirectIfLoggedIn();
+      if (event.persisted) {
+        document.documentElement.style.visibility = 'hidden';
+        redirectIfLoggedIn();
+      }
     });
     // ──────────────────────────────────────────────────────────────────────────
+
     let mode = 'login';
     const $ = s => document.querySelector(s);
 

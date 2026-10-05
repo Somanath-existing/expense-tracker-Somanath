@@ -15,6 +15,12 @@
   <meta http-equiv="Expires" content="0" />
 </head>
 <body>
+  <!--
+    Auth guard: hide the page instantly before any content renders.
+    app.js reveals it after a successful session check.
+    This prevents any flash of app content on bfcache restores.
+  -->
+  <script>document.documentElement.style.visibility = 'hidden';</script>
 
   <!-- ========== HEADER ========== -->
   <header class="app-header">

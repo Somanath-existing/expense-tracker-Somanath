@@ -647,6 +647,9 @@ async function init() {
     const me = await api('/api/auth/me');
     if (!me) return; // api() already redirected via replace()
     el.userEmail.textContent = me.email;
+    // Reveal the page now that we know the session is valid
+    document.documentElement.style.visibility = '';
+    sessionStorage.removeItem('__loggedOut');
   } catch {
     window.location.replace('/login.html');
     return;
@@ -672,7 +675,9 @@ async function init() {
     // Clear state in memory
     state.transactions = [];
     state.categories = [];
-    // Use location.replace so the authenticated page is replaced in browser history
+    // Mark that the user explicitly logged out so login.html won't auto-redirect back
+    sessionStorage.setItem('__loggedOut', '1');
+    // replace() removes this page from history so Back can't return to it
     window.location.replace('/login.html');
   });
 
@@ -759,26 +764,30 @@ async function init() {
 
 document.addEventListener('DOMContentLoaded', init);
 
-// Guard against bfcache restoring stale authenticated pages.
-// Fires on every page show — both fresh loads and bfcache restores.
-// On a normal DOMContentLoaded the init() function already checks the session;
-// this listener covers the bfcache case where DOMContentLoaded doesn't re-fire.
+// Guard against bfcache restoring stale authenticated/unauthenticated pages.
 window.addEventListener('pageshow', async event => {
-  // Only re-validate on bfcache restores (persisted = true).
-  // Fresh loads are handled by init() → api('/api/auth/me').
+  // Only re-validate on bfcache restores — fresh loads go through init().
   if (!event.persisted) return;
+
+  // INSTANTLY hide the page so the user never sees a flash of stale content
+  // while we wait for the async network check.
+  document.documentElement.style.visibility = 'hidden';
 
   try {
     const res = await fetch('/api/auth/me', {
       credentials: 'same-origin',
+      cache: 'no-store',
       headers: { 'Cache-Control': 'no-store' }
     });
-    if (res.status === 401 || !res.ok) {
+    if (res.ok) {
+      // Session still valid — reveal the page
+      document.documentElement.style.visibility = '';
+    } else {
       // Session gone — replace() so Back can't return here
       window.location.replace('/login.html');
     }
-    // Session still valid — stay on the page (nothing to do)
   } catch {
+    // Network error — send to login to be safe
     window.location.replace('/login.html');
   }
 });
