@@ -8,6 +8,10 @@ async function migrate() {
     console.error('Error: DATABASE_URL environment variable is not defined.');
     process.exit(1);
   }
+  if (process.env.DATABASE_URL === '[SENSITIVE]') {
+    console.log('Skipping database migration: DATABASE_URL is masked as [SENSITIVE] in this environment.');
+    process.exit(0);
+  }
   const sql = neon(process.env.DATABASE_URL);
   await sql`
     CREATE TABLE IF NOT EXISTS users (
