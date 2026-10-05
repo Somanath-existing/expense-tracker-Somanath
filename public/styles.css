@@ -255,16 +255,32 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity:1; transfo
 .toast.error   { border-left:4px solid var(--danger); }
 .toast.info    { border-left:4px solid var(--accent-light); }
 
+/* ---------- Password toggle wrapper ---------- */
+.input-pw-wrap { position:relative; display:flex; align-items:center; }
+.input-pw-wrap .input { width:100%; padding-right:2.8rem; }
+.pw-toggle {
+  position:absolute; right:.65rem;
+  background:none; border:none; cursor:pointer;
+  color:var(--text-muted); padding:.35rem;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:6px; transition:color var(--transition);
+}
+.pw-toggle:hover { color:var(--text-primary); }
+.pw-toggle svg { pointer-events:none; }
+
 /* ---------- Responsive ---------- */
 @media (max-width:960px) {
   .dashboard-grid { grid-template-columns:1fr; }
   .summary-panel { position:static; }
   .summary-sub-row { grid-template-columns:1fr 1fr; }
-  .header-inner { padding:.8rem 1.25rem; }
-  .main-content { padding:1.15rem 1.15rem 3rem; }
-  .btn-primary span { display:none; }
+  .header-inner { padding:.8rem 1rem; gap:.5rem; }
+  .main-content { padding:1rem 1rem 3rem; }
   .user-email { display:none; }
   .expense-actions { opacity:1; }
+  /* Keep button text visible but shrink padding */
+  .btn { padding:.6rem 1rem; font-size:.82rem; }
+  .btn-icon-only { width:36px; height:36px; padding:0; }
+  #addExpenseBtn svg { display:inline; }
 }
 @media (max-width:600px) {
   .filter-row { flex-wrap:wrap; }
@@ -272,7 +288,13 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity:1; transfo
   .date-range { flex:1 1 100%; }
   .form-row-2 { grid-template-columns:1fr; }
   .expense-card { padding:.8rem 1rem; gap:.75rem; }
-  .modal-container { padding:1.5rem; }
+  .modal-container { padding:1.25rem; }
+  /* Header: stack email hidden, shrink button text */
+  #addExpenseBtn span { display:none; }
+  #addExpenseBtn { width:38px; height:38px; padding:0; justify-content:center; border-radius:var(--radius-sm); }
+  .header-right { gap:.5rem; }
+  .toast-container { bottom:1rem; right:.75rem; left:.75rem; }
+  .toast { min-width:unset; width:100%; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; }
