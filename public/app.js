@@ -121,7 +121,7 @@ const el = {
 // ── API ───────────────────────────────────────────────────────────────────────
 async function api(url, opts = {}) {
   const res = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...opts });
-  if (res.status === 401) { window.location.href = '/login.html'; return; }
+  if (res.status === 401) { window.location.replace('/login.html'); return; }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const msg = data.errors ? data.errors.join(', ') : data.error || 'Request failed';
@@ -645,10 +645,10 @@ async function init() {
   // Check session — redirect to login if not authenticated
   try {
     const me = await api('/api/auth/me');
-    if (!me) return; // api() already redirected
+    if (!me) return; // api() already redirected via replace()
     el.userEmail.textContent = me.email;
   } catch {
-    window.location.href = '/login.html';
+    window.location.replace('/login.html');
     return;
   }
 
@@ -759,18 +759,26 @@ async function init() {
 
 document.addEventListener('DOMContentLoaded', init);
 
-// If the page is restored from back-forward cache (bfcache) when user hits browser Back button
+// Guard against bfcache restoring stale authenticated pages.
+// Fires on every page show — both fresh loads and bfcache restores.
+// On a normal DOMContentLoaded the init() function already checks the session;
+// this listener covers the bfcache case where DOMContentLoaded doesn't re-fire.
 window.addEventListener('pageshow', async event => {
-  if (event.persisted) {
-    try {
-      const res = await fetch('/api/auth/me', {
-        headers: { 'Cache-Control': 'no-cache, no-store' }
-      });
-      if (res.status === 401 || !res.ok) {
-        window.location.replace('/login.html');
-      }
-    } catch {
+  // Only re-validate on bfcache restores (persisted = true).
+  // Fresh loads are handled by init() → api('/api/auth/me').
+  if (!event.persisted) return;
+
+  try {
+    const res = await fetch('/api/auth/me', {
+      credentials: 'same-origin',
+      headers: { 'Cache-Control': 'no-store' }
+    });
+    if (res.status === 401 || !res.ok) {
+      // Session gone — replace() so Back can't return here
       window.location.replace('/login.html');
     }
+    // Session still valid — stay on the page (nothing to do)
+  } catch {
+    window.location.replace('/login.html');
   }
 });

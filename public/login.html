@@ -70,6 +70,32 @@
   </main>
 
   <script>
+    // ── Session guard ──────────────────────────────────────────────────────────
+    // If the user already has a valid session (e.g., pressed Back from the app),
+    // skip the login page entirely and send them straight to the app.
+    async function redirectIfLoggedIn() {
+      try {
+        const res = await fetch('/api/auth/me', {
+          credentials: 'same-origin',
+          headers: { 'Cache-Control': 'no-store' }
+        });
+        if (res.ok) {
+          // Already authenticated — replace so Back doesn't loop back here
+          window.location.replace('/index.html');
+        }
+      } catch (_) {
+        // Network error — stay on login page, user can try signing in
+      }
+    }
+
+    // Run on fresh load
+    document.addEventListener('DOMContentLoaded', redirectIfLoggedIn);
+
+    // Run when page is restored from bfcache (browser Back/Forward)
+    window.addEventListener('pageshow', event => {
+      if (event.persisted) redirectIfLoggedIn();
+    });
+    // ──────────────────────────────────────────────────────────────────────────
     let mode = 'login';
     const $ = s => document.querySelector(s);
 
