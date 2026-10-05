@@ -755,6 +755,8 @@ async function init() {
   await fetchCategories();
   fetchTransactions();
   fetchSummary();
+}
+
 document.addEventListener('DOMContentLoaded', init);
 
 // If the page is restored from back-forward cache (bfcache) when user hits browser Back button
