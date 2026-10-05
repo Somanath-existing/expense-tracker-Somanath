@@ -7,7 +7,12 @@ module.exports = async function handler(req, res) {
   const uid = requireAuth(req, res);
   if (!uid) return;
 
-  const id = Number(req.query.id);
+  let id = Number(req.query.id);
+  if (!id) {
+    const parts = (req.url || '').split('?')[0].split('/');
+    const last = parts[parts.length - 1];
+    if (/^\d+$/.test(last)) id = Number(last);
+  }
   if (!Number.isInteger(id) || id < 1) return json(res, 400, { error: 'Invalid ID' });
 
   const db = sql();

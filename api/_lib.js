@@ -78,6 +78,8 @@ function validateTransaction(body) {
   if (!t.title || t.title.length > 200)  errors.push('Title is required (max 200 chars)');
   if (!Number.isFinite(t.amount) || t.amount <= 0 || t.amount > 1e9) errors.push('Amount must be a positive number');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(t.date) || isNaN(Date.parse(t.date)))  errors.push('Valid date is required');
+  const todayStr = new Date().toISOString().split('T')[0];
+  if (t.date > todayStr)                  errors.push('Date cannot be in the future');
   if (!CATEGORIES.includes(t.category))   errors.push('Invalid category');
   if (!['income', 'expense'].includes(t.type)) errors.push("Type must be 'income' or 'expense'");
   if (t.note.length > 1000)               errors.push('Note too long (max 1000 chars)');

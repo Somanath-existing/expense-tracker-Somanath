@@ -2,8 +2,10 @@
   "version": 2,
   "buildCommand": "node api/migrate.js",
   "rewrites": [
-    { "source": "/api/:path*", "destination": "/api/:path*" },
-    { "source": "/(.*)", "destination": "/public/$1" }
+    { "source": "/api/expenses/summary", "destination": "/api/expenses/summary" },
+    { "source": "/api/expenses/:id",     "destination": "/api/expenses/[id]" },
+    { "source": "/api/:path*",           "destination": "/api/:path*" },
+    { "source": "/(.*)",                 "destination": "/public/$1" }
   ],
   "headers": [
     {

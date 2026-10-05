@@ -212,6 +212,9 @@ function renderDonut(summary) {
 function openModal(txn = null) {
   clearErrors();
   setType(txn ? txn.type : 'expense');
+  const todayIso = new Date().toISOString().split('T')[0];
+  el.dateInput.max = todayIso;
+
   if (txn) {
     state.editingId = txn.id;
     el.modalTitle.textContent   = 'Edit Transaction';
@@ -228,7 +231,7 @@ function openModal(txn = null) {
     el.submitBtnText.textContent = 'Save';
     el.expenseForm.reset();
     el.typeInput.value = 'expense';
-    el.dateInput.value = new Date().toISOString().split('T')[0];
+    el.dateInput.value = todayIso;
   }
   el.expenseModal.style.display = 'flex';
   setTimeout(() => el.titleInput.focus(), 80);
