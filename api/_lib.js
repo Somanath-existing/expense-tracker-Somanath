@@ -23,6 +23,10 @@ const CORS_HEADERS = {
   'Content-Type': 'application/json',
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',
+  // Disable caching for all API responses so history navigation / back button cannot expose user data
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+  'Pragma': 'no-cache',
+  'Expires': '0',
   // Tight CSP: only same-origin scripts/styles; no inline scripts from API responses
   'Content-Security-Policy': "default-src 'none'",
 };
@@ -94,7 +98,11 @@ function setAuthCookie(res, userId) {
 }
 
 function clearAuthCookie(res) {
-  res.setHeader('Set-Cookie', 'token=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0');
+  const isLocalDev = (process.env.NODE_ENV !== 'production') && !process.env.VERCEL;
+  const secureFlag = isLocalDev ? '' : '; Secure';
+  res.setHeader('Set-Cookie',
+    `token=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT${secureFlag}`
+  );
 }
 
 // ── Validation ───────────────────────────────────────────────────────────────

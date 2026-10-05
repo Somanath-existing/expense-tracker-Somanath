@@ -15,8 +15,11 @@ module.exports = async function handler(req, res) {
   const errors = [];
 
   if (!emailRe.test(email) || email.length > 254) errors.push('A valid email address is required');
-  if (typeof password !== 'string' || password.length < 8 || password.length > 72)
+  if (typeof password !== 'string' || password.length < 8 || password.length > 72) {
     errors.push('Password must be between 8 and 72 characters');
+  } else if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+    errors.push('Password must include at least one letter and one number');
+  }
   if (errors.length) return json(res, 400, { errors });
 
   try {

@@ -123,7 +123,7 @@
         });
         const d = await res.json().catch(() => ({}));
         if (res.ok) {
-          window.location.href = '/index.html';
+          window.location.replace('/index.html');
         } else {
           if (d.errors) {
             d.errors.forEach(msg => {

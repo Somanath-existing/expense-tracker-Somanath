@@ -666,8 +666,14 @@ async function init() {
   }
 
   el.logoutBtn.addEventListener('click', async () => {
-    await fetch('/api/auth/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-    window.location.href = '/login.html';
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+    } catch (_) {}
+    // Clear state in memory
+    state.transactions = [];
+    state.categories = [];
+    // Use location.replace so the authenticated page is replaced in browser history
+    window.location.replace('/login.html');
   });
 
   // Modal
@@ -749,6 +755,20 @@ async function init() {
   await fetchCategories();
   fetchTransactions();
   fetchSummary();
-}
-
 document.addEventListener('DOMContentLoaded', init);
+
+// If the page is restored from back-forward cache (bfcache) when user hits browser Back button
+window.addEventListener('pageshow', async event => {
+  if (event.persisted) {
+    try {
+      const res = await fetch('/api/auth/me', {
+        headers: { 'Cache-Control': 'no-cache, no-store' }
+      });
+      if (res.status === 401 || !res.ok) {
+        window.location.replace('/login.html');
+      }
+    } catch {
+      window.location.replace('/login.html');
+    }
+  }
+});
